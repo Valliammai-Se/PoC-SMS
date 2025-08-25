@@ -9,7 +9,7 @@ const supabase = createClient(
 );
 
 // --- Get customer by ID ---
-export async function getCustomerById(customer_id) {
+export async function getCustomerById(customer_id: number) {
   const { data, error } = await supabase
     .from("customers")
     .select("id, name, email, phone")
@@ -20,10 +20,22 @@ export async function getCustomerById(customer_id) {
   return data;
 }
 
+// --- Get customer by MobileNumber ---
+export async function getCustomerByMobile(mobile_number: number) {
+  const { data, error } = await supabase
+    .from("Customers")
+    .select("id, name, email, phone")
+    .eq("mobile_number", mobile_number)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // --- Get all customers ---
 export async function getAllCustomers() {
   const { data, error } = await supabase
-    .from("customers")
+    .from("Customers")
     .select("id, name, email, phone, created_at")
     .order("created_at", { ascending: false });
 
@@ -33,23 +45,12 @@ export async function getAllCustomers() {
 
 
 // --- Save history entry ---
-export async function saveHistory({ customer_id, message, twilio_sid, status }) {
+export async function saveHistory(customer_id : number, message?: string) {
   const { data, error } = await supabase
-    .from("history")
-    .insert([{ customer_id, message, twilio_sid, status }])
+    .from("History")
+    .insert([{ customer_id}])
     .select();
 
   if (error) throw new Error(error.message);
   return data[0];
-}
-
-// --- Update message status from Twilio ---
-export async function updateHistoryStatus({ sid, status, error_code }) {
-  const { error } = await supabase
-    .from("history")
-    .update({ status, error_code })
-    .eq("twilio_sid", sid);
-
-  if (error) throw new Error(error.message);
-  return true;
 }
