@@ -18,7 +18,6 @@ const PORT = config.PORT || 3000;
 
 app.listen(PORT, async() => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
-  await sendSMS(3)
 });
 const readyQuestions = [
   `Great. When do you want the product to be delivered? Reply 1 for TODAY, 2 for SOME OTHER TIME.`,
