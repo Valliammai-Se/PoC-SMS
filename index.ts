@@ -3,6 +3,7 @@ import { getAllCustomers, getCustomerById, getCustomerByMobile } from "./db";
 import express from "express";
 import MessagingResponse from "twilio/lib/twiml/MessagingResponse";
 import config from "./config";
+import cors from "cors";
 
 const twilioClient = twilio(
   config.TWILIO_ACCOUNT_SID!,
@@ -10,6 +11,7 @@ const twilioClient = twilio(
 );
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 const PORT = config.PORT || 3000;
@@ -44,7 +46,7 @@ export async function sendSMS(customerId: number) {
   //   message,
   // );
 
-  return { customer, sms, history };
+  return { customer, sms };
 }
 
 export async function listMessages(limit?: number) {
@@ -56,6 +58,17 @@ export async function listMessages(limit?: number) {
   });
 
 }
+
+
+app.post("/send-sms", async (req, res) => {
+  try {
+    const {id: customerId} = req.body;
+    await sendSMS(customerId);
+    res.status(200).send({status:'Successfully Sent message to customer'})
+  } catch (error: any) {
+    res.status(500).send({'Error while sending message':error?.message});
+  }
+});
 
 app.post("/sms", async (req, res) => {
   const { From, To, Body } = req.body;

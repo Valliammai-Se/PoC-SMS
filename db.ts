@@ -1,18 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-import config from "./config";
 
-dotenv.config();
+
+// dotenv.config();
 
 const supabase = createClient(
-  config.SUPABASE_URL ?? "",
-  config.SUPABASE_SERVICE_ROLE_KEY ?? ""
+  "https://uoxeennwulrgbaitqnub.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVveGVlbm53dWxyZ2JhaXRxbnViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTkyOTkyNSwiZXhwIjoyMDcxNTA1OTI1fQ.xaqIfkvu_CbillQzVqGOKnPniPqUoePK_C6XoQaZiOA"
 );
 
 // --- Get customer by ID ---
 export async function getCustomerById(customer_id: number) {
   const { data, error } = await supabase
-    .from("customers")
+    .from("Customers")
     .select("id, name, email, mobile_number")
     .eq("id", customer_id)
     .single();
@@ -37,9 +36,9 @@ export async function getCustomerByMobile(mobile_number: number) {
 export async function getAllCustomers() {
   const { data, error } = await supabase
     .from("Customers")
-    .select('*')
-    // .order("created_at", { ascending: false });
-  console.log(data);
+    .select("id, name, email, mobile_number, created_at")
+    .order("created_at", { ascending: false });
+
   if (error) throw new Error(error.message);
   return data;
 }

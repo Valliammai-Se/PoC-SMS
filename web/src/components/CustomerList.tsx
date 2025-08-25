@@ -1,30 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, List, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Customer } from "../types";
+import {getAllCustomers} from "../../../db";
+import {sendSMS} from "../../../index";
+
 
 const { Title } = Typography;
-
-const customers: Customer[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    phone: "+1 234 567 890",
-    email: "john@example.com",
-    chatHistory: ["Hello!", "How can I help you?", "Thank you!"]
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    phone: "+1 987 654 321",
-    email: "jane@example.com",
-    chatHistory: ["Hi!", "Need assistance", "Issue resolved"]
-  }
-];
 
 const CustomerList: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   const showHistory = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -36,6 +23,34 @@ const CustomerList: React.FC = () => {
     setSelectedCustomer(null);
   };
 
+  useEffect(() => {
+    const fun = async () => {
+        const customerList: Customer[] = await getAllCustomers();
+        if(customerList?.length)
+        {
+            setCustomers(customerList);
+        }
+    }
+    fun();
+  }, []);
+ 
+
+  const sendSms = async(id: number) => {
+    const response = await fetch("http://localhost:3000/send-sms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({id}),
+      });
+    
+      if (!response.ok) {
+        throw new Error("Failed to send SMS");
+      }
+      console.log(response)
+      return response.json();
+  };
+
   const columns: ColumnsType<Customer> = [
     {
       title: "Name",
@@ -44,7 +59,7 @@ const CustomerList: React.FC = () => {
     },
     {
       title: "Phone",
-      dataIndex: "phone",
+      dataIndex: "mobile_number",
       key: "phone"
     },
     {
@@ -57,7 +72,7 @@ const CustomerList: React.FC = () => {
       key: "actions",
       render: (_, record) => (
         <>
-          <Button type="primary" style={{ marginRight: 8 }}>
+          <Button type="primary" style={{ marginRight: 8 }} onClick={() => sendSms(record?.id)}>
             Send
           </Button>
           <Button onClick={() => showHistory(record)}>History</Button>
