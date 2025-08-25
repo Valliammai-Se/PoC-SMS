@@ -161,30 +161,29 @@ app.post("/sms", async (req, res) => {
     {
       console.log("First Outbound: ", firstOutbound?.body);
       const index = readyQuestions.findIndex(q => firstOutbound.body.includes(q));
-      console.log("Index: ", index);
       const numbers = firstOutbound?.body.match(/\d+/g)
       const numbersQues = secondOutbound?.body.match(/\d+/g)
-      console.log(parseInt(Body))
+      console.log(numbersQues)
       if(index != -1)
         replyMessage = "Error Occured";
       if(!numbers?.includes(Body))
         replyMessage = "Invalid Response. Please reply with the correct option.";
       else
-        replyMessage = readyQuestions[index + parseInt(Body) + numbersQues.length -1]; 
+        replyMessage = readyQuestions[index + parseInt(Body) + (numbersQues.length ?? 1) -1]; 
     }
     else if(DeliveredQuestions.some(q => firstOutbound?.body.includes(q))){
        console.log("First Outbound: ", firstOutbound?.body);
       const index = DeliveredQuestions.findIndex(q => firstOutbound.body.includes(q));
-      console.log("Index: ", index);
+      
       const numbers = firstOutbound?.body.match(/\d+/g)
       const numbersQues = secondOutbound?.body.match(/\d+/g)
-      console.log(parseInt(Body))
+      console.log(numbersQues)
       if(index != -1)
         replyMessage = "Error Occured";
       if(!numbers?.includes(Body))
         replyMessage = "Invalid Response. Please reply with the correct option.";
       else
-        replyMessage = DeliveredQuestions[index + parseInt(Body) + numbersQues.length -1]; 
+        replyMessage = DeliveredQuestions[index + parseInt(Body) + (numbersQues.length ?? 1) -1]; 
     }
     await twilioClient.messages.create({
       body: replyMessage,
