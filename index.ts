@@ -18,7 +18,7 @@ const PORT = config.PORT || 3000;
 
 app.listen(PORT, async() => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
-  await listMessages();
+  await sendSMS(3)
 });
 const arrayOfQuestions = [
   `ACCEPTED. Are you willing to provide a review? Reply 1 for YES, 2 for NO.`,
@@ -38,7 +38,7 @@ export async function sendSMS(customerId: number) {
   const sms = await twilioClient.messages.create({
     body: message,
     from: config.TWILIO_PHONE_NUMBER,
-    to: "+18777804236",
+    to: customer.mobile_number,
   });
 
   // const history = await saveHistory(
@@ -52,11 +52,11 @@ export async function sendSMS(customerId: number) {
 export async function listMessages(limit?: number) {
   const messages = await twilioClient.messages.list({ limit: limit || 20 });
   
-  messages.forEach((m) =>{
+  const response = messages.map((m) =>{
     const cleanBody = m.body.includes("-") ? m.body.split("-")[1].trim() : m.body;
-    console.log(m.direction=="inbound" ? "Customer: "+m.body : "Admin: "+cleanBody);
+   return(m.direction=="inbound" ? "Customer: "+m.body : "Admin: "+cleanBody);
   });
-
+  return response;
 }
 
 
@@ -65,6 +65,14 @@ app.post("/send-sms", async (req, res) => {
     const {id: customerId} = req.body;
     await sendSMS(customerId);
     res.status(200).send({status:'Successfully Sent message to customer'})
+  } catch (error: any) {
+    res.status(500).send({'Error while sending message':error?.message});
+  }
+});
+app.post("/customers", async (req, res) => {
+  try {
+   const data = await getAllCustomers();
+    res.json(data);
   } catch (error: any) {
     res.status(500).send({'Error while sending message':error?.message});
   }
@@ -83,7 +91,17 @@ app.post("/sms", async (req, res) => {
     }
     else
     {
-      
+      console.log("First Outbound: ", firstOutbound?.body);
+      const index = arrayOfQuestions.findIndex(q => firstOutbound.body.includes(q));
+      console.log("Index: ", index);
+      const numbers = firstOutbound?.body.match(/\d+/g)
+      console.log(parseInt(Body))
+      if(index != -1)
+        replyMessage = "Error Occured";
+      if(!numbers?.includes(Body))
+        replyMessage = "Invalid Response. Please reply with the correct option.";
+      else
+        replyMessage = arrayOfQuestions[index + parseInt(Body) + 1]; 
     }
     await twilioClient.messages.create({
       body: replyMessage,
