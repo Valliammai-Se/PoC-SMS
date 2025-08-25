@@ -1,11 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import config from "./config";
 
 dotenv.config();
 
 const supabase = createClient(
-  process.env.SUPABASE_URL ?? "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
+config.SUPABASE_URL ?? "",
+  config.SUPABASE_SERVICE_ROLE_KEY ?? ""
 );
 
 async function seedCustomers() {
