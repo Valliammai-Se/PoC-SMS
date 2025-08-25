@@ -66,10 +66,11 @@ export async function sendSMS(customerId: number) {
   return { customer, sms };
 }
 
-export async function listMessages(customerId?: number) {
+export async function listMessages(customerId: number) {
+  const customer = await getCustomerById(customerId);
   const [sent, received] = await Promise.all([
-  twilioClient.messages.list({ to: "+1234567890", limit: 50 }),
-  twilioClient.messages.list({ from: "+1234567890", limit: 50 }),
+  twilioClient.messages.list({ to: customer.mobile_number, limit: 50 }),
+  twilioClient.messages.list({ from: customer.mobile_number, limit: 50 }),
 ]);
 
 const conversation = [...sent, ...received].sort(
@@ -156,13 +157,28 @@ app.post("/sms", async (req, res) => {
       const index = readyQuestions.findIndex(q => firstOutbound.body.includes(q));
       console.log("Index: ", index);
       const numbers = firstOutbound?.body.match(/\d+/g)
+      const numbersQues = secondOutbound?.body.match(/\d+/g)
       console.log(parseInt(Body))
       if(index != -1)
         replyMessage = "Error Occured";
       if(!numbers?.includes(Body))
         replyMessage = "Invalid Response. Please reply with the correct option.";
       else
-        replyMessage = readyQuestions[index + parseInt(Body) + 1]; 
+        replyMessage = readyQuestions[index + parseInt(Body) + numbersQues.length -1]; 
+    }
+    else if(DeliveredQuestions.some(q => firstOutbound?.body.includes(q))){
+       console.log("First Outbound: ", firstOutbound?.body);
+      const index = DeliveredQuestions.findIndex(q => firstOutbound.body.includes(q));
+      console.log("Index: ", index);
+      const numbers = firstOutbound?.body.match(/\d+/g)
+      const numbersQues = secondOutbound?.body.match(/\d+/g)
+      console.log(parseInt(Body))
+      if(index != -1)
+        replyMessage = "Error Occured";
+      if(!numbers?.includes(Body))
+        replyMessage = "Invalid Response. Please reply with the correct option.";
+      else
+        replyMessage = DeliveredQuestions[index + parseInt(Body) + numbersQues.length -1]; 
     }
     await twilioClient.messages.create({
       body: replyMessage,
