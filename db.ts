@@ -24,7 +24,18 @@ export async function getCustomerById(customer_id: number) {
   if (error) throw new Error(error.message);
   return data;
 }
+export async function updateCustomerStatus(customer_id: number, status: number) {
+  const { data, error } = await supabase
+    .from("Customers")
+    .update({ status: statuses[status]
+    })
+    .eq("id", customer_id)
+    .select()
+    .single();
 
+  if (error) throw new Error(error.message);
+  return data;
+}
 // --- Get customer by MobileNumber ---
 export async function getCustomerByMobile(mobile_number: number) {
   const { data, error } = await supabase
