@@ -18,6 +18,7 @@ const PORT = config.PORT || 3000;
 
 app.listen(PORT, async() => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
+  sendSMS(3,1)
 });
 const readyQuestions = [
   `Great. When do you want the product to be delivered? Reply 1 for TODAY, 2 for SOME OTHER TIME.`,
@@ -164,12 +165,13 @@ app.post("/sms", async (req, res) => {
       const numbers = firstOutbound?.body.match(/\d+/g)
       const numbersQues = secondOutbound?.body.match(/\d+/g)
       console.log(numbersQues)
+      console.log(secondOutbound)
       if(index != -1)
         replyMessage = "Error Occured";
       if(!numbers?.includes(Body))
         replyMessage = "Invalid Response. Please reply with the correct option.";
       else
-        replyMessage = readyQuestions[index + parseInt(Body) + (numbersQues.length ?? 1) -1]; 
+        replyMessage = readyQuestions[index + parseInt(Body) + (numbersQues ? numbersQues.length : 1) -1]; 
     }
     else if(DeliveredQuestions.some(q => firstOutbound?.body.includes(q))){
        console.log("First Outbound: ", firstOutbound?.body);
@@ -178,12 +180,13 @@ app.post("/sms", async (req, res) => {
       const numbers = firstOutbound?.body.match(/\d+/g)
       const numbersQues = secondOutbound?.body.match(/\d+/g)
       console.log(numbersQues)
+      console.log(secondOutbound)
       if(index != -1)
         replyMessage = "Error Occured";
       if(!numbers?.includes(Body))
         replyMessage = "Invalid Response. Please reply with the correct option.";
       else
-        replyMessage = DeliveredQuestions[index + parseInt(Body) + (numbersQues.length ?? 1) -1]; 
+        replyMessage = DeliveredQuestions[index + parseInt(Body) + (numbersQues ? numbersQues.length : 1) -1]; 
     }
     await twilioClient.messages.create({
       body: replyMessage,
