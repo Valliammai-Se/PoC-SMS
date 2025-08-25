@@ -49,9 +49,10 @@ const DeliveredQuestions = [
 const firstQuestion = "You order has been placed. Would you like to schedule the delivery? Reply 1 for YES and 2 for NO OR 3 for CANCEL";
 const secondQuestion = "Your delivery is scheduled for today and will be delivered in you selected slot time? If yes, reply 1 else 2";
 const thirdQuestion = "Your product has been delivered. Reply 1 to CONFIRM and 2 to REPORT ISSUE";
-export async function sendSMS(customerId: number) {
+export async function sendSMS(customerId: number, questionNumber?: number) {
   const customer = await getCustomerById(customerId);
-  const message = `Hello ${customer.name}, ${firstQuestion}`;
+  const question = questionNumber === 1 ? firstQuestion : questionNumber === 2 ? secondQuestion : questionNumber === 3 ? thirdQuestion : firstQuestion;
+  const message = `Hello ${customer.name}, ${question}`;
   const sms = await twilioClient.messages.create({
     body: message,
     from: config.TWILIO_PHONE_NUMBER,
@@ -77,14 +78,15 @@ const conversation = [...sent, ...received].sort(
   (a, b) => new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime()
 );
 
-  
   const response = conversation.map((m) =>{
     const cleanBody = m.body.includes("-") ? m.body.split("-")[1].trim() : m.body;
-   return(m.direction=="inbound" ? "Customer: "+m.body : "Admin: "+cleanBody);
+   return({Customer : m.direction=="inbound" ? m.body : "",
+    Admin: m.direction!=="inbound" ? cleanBody : "",
+    Date: m.dateCreated
+   });
   });
   return response;
 }
-
 
 app.post("/send-sms", async (req, res) => {
   try {
@@ -123,6 +125,7 @@ app.put("/statuses", async (req, res) => {
   try {
      const {id: customerId, status: statusId} = req.body;
     await updateCustomerStatus(customerId, statusId);
+    await sendSMS(customerId,statusId)
      res.status(200).send({status:'Successfully Updated Status'})
   } catch (error: any) {
     res.status(500).send({'Error while sending message':error?.message});
