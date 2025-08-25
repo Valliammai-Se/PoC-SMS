@@ -18,7 +18,6 @@ const PORT = config.PORT || 3000;
 
 app.listen(PORT, async() => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
-  sendSMS(3,1)
 });
 const readyQuestions = [
   `Great. When do you want the product to be delivered? Reply 1 for TODAY, 2 for SOME OTHER TIME.`,
@@ -143,7 +142,8 @@ app.post("/sms", async (req, res) => {
         replyMessage = defaultMessage;
      const msgs = await twilioClient.messages.list({ limit :20 });
     const firstOutbound = msgs.find(m => m.direction !== "inbound");
-     const secondOutbound = msgs.find(m => {m.direction !== "inbound" && m != firstOutbound});
+     const secondOutbound = msgs.find(m => {  return m.direction !== "inbound" && m !== firstOutbound;
+     });
     if(firstOutbound?.body.includes(firstQuestion))
     {
       replyMessage = Body.trim() === "1" ? readyQuestions[0] : Body.trim() === "2" ? readyQuestions[1] : Body.trim() === "3" ? readyQuestions[2] : defaultMessage;
