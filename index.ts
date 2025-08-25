@@ -77,6 +77,14 @@ app.post("/customers", async (req, res) => {
     res.status(500).send({'Error while sending message':error?.message});
   }
 });
+app.post("/history", async (req, res) => {
+  try {
+   const data = await listMessages();
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).send({'Error while sending message':error?.message});
+  }
+});
 
 app.post("/sms", async (req, res) => {
   const { From, To, Body } = req.body;
