@@ -90,7 +90,7 @@ const conversation = [...sent, ...received].sort(
 app.post("/send-sms", async (req, res) => {
   try {
     const {id: customerId, msg} = req.body;
-    await sendSMS(customerId, msg);
+    await sendSMS(customerId,undefined, msg);
     res.status(200).send({status:'Successfully Sent message to customer'})
   } catch (error: any) {
     res.status(500).send({'Error while sending message':error?.message});
