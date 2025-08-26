@@ -142,7 +142,8 @@ app.post("/sms", async (req, res) => {
         replyMessage = defaultMessage;
      const msgs = await twilioClient.messages.list({ limit :20 });
     const firstOutbound = msgs.find(m => m.direction !== "inbound");
-     const secondOutbound = msgs.find(m => {m.direction !== "inbound" && m != firstOutbound});
+     const secondOutbound = msgs.find(m => {  return m.direction !== "inbound" && m !== firstOutbound;
+     });
     if(firstOutbound?.body.includes(firstQuestion))
     {
       replyMessage = Body.trim() === "1" ? readyQuestions[0] : Body.trim() === "2" ? readyQuestions[1] : Body.trim() === "3" ? readyQuestions[2] : defaultMessage;
@@ -164,12 +165,13 @@ app.post("/sms", async (req, res) => {
       const numbers = firstOutbound?.body.match(/\d+/g)
       const numbersQues = secondOutbound?.body.match(/\d+/g)
       console.log(numbersQues)
+      console.log(secondOutbound)
       if(index != -1)
         replyMessage = "Error Occured";
       if(!numbers?.includes(Body))
         replyMessage = "Invalid Response. Please reply with the correct option.";
       else
-        replyMessage = readyQuestions[index + parseInt(Body) + (numbersQues.length ?? 1) -1]; 
+        replyMessage = readyQuestions[index + parseInt(Body) + (numbersQues ? numbersQues.length : 1) -1]; 
     }
     else if(DeliveredQuestions.some(q => firstOutbound?.body.includes(q))){
        console.log("First Outbound: ", firstOutbound?.body);
@@ -178,12 +180,13 @@ app.post("/sms", async (req, res) => {
       const numbers = firstOutbound?.body.match(/\d+/g)
       const numbersQues = secondOutbound?.body.match(/\d+/g)
       console.log(numbersQues)
+      console.log(secondOutbound)
       if(index != -1)
         replyMessage = "Error Occured";
       if(!numbers?.includes(Body))
         replyMessage = "Invalid Response. Please reply with the correct option.";
       else
-        replyMessage = DeliveredQuestions[index + parseInt(Body) + (numbersQues.length ?? 1) -1]; 
+        replyMessage = DeliveredQuestions[index + parseInt(Body) + (numbersQues ? numbersQues.length : 1) -1]; 
     }
     await twilioClient.messages.create({
       body: replyMessage,
