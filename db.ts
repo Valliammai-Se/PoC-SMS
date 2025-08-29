@@ -68,7 +68,7 @@ export async function getAllCustomers() {
   const { data, error } = await supabase
     .from("Customers")
     .select("id, name, email, mobile_number, status,is_sms,is_whatsapp, created_at")
-    .order("created_at", { ascending: false });
+    .order("id", { ascending: false });
 
   if (error) throw new Error(error.message);
   return data;

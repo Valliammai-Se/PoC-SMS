@@ -78,15 +78,8 @@ export async function sendSMS(customerId: number, questionNumber?: number, msg?:
 
   return { customer, sms, whatsapp  };
 }
-
-export async function listMessages(customerId: number) {
-  const customer = await getCustomerById(customerId);
-  const [sent, received] = await Promise.all([
-  twilioClient.messages.list({ to: customer.mobile_number, limit: 50 }),
-  twilioClient.messages.list({ from: customer.mobile_number, limit: 50 }),
-]);
-
-const conversation = [...sent, ...received].sort(
+async function formatMessages(sent: any[], received: any[]) {
+  const conversation = [...sent, ...received].sort(
   (a, b) => new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime()
 );
 
@@ -98,6 +91,24 @@ const conversation = [...sent, ...received].sort(
    });
   });
   return response;
+}
+
+
+export async function listMessages(customerId: number) {
+  const customer = await getCustomerById(customerId);
+  const [sent, received] = await Promise.all([
+  twilioClient.messages.list({ to: customer.mobile_number, limit: 50 }),
+  twilioClient.messages.list({ from: customer.mobile_number, limit: 50 }),
+]);
+
+const [wpsent, wpreceived] = await Promise.all([
+  twilioClient.messages.list({ to: `whatsapp:${customer.mobile_number}`, limit: 50 }),
+  twilioClient.messages.list({ from: `whatsapp:${customer.mobile_number}`, limit: 50 }),
+]);
+
+const response = await formatMessages(sent, received);  
+const wpresponse = await formatMessages(wpsent, wpreceived);
+  return {response, wpresponse};
 }
 
 app.post("/send-sms", async (req, res) => {
