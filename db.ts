@@ -17,7 +17,7 @@ const supabase = createClient(
 export async function getCustomerById(customer_id: number) {
   const { data, error } = await supabase
     .from("Customers")
-    .select("id, name, email, mobile_number,status")
+    .select("id, name, email, mobile_number,is_sms, is_whatsapp,status")
     .eq("id", customer_id)
     .single();
 
@@ -36,8 +36,23 @@ export async function updateCustomerStatus(customer_id: number, status: number) 
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function updateCustomerNotification(customer_id: number, is_sms?: boolean, is_whatsapp?: boolean) {
+  let updateData: any = {};
+  if (is_sms !== undefined) updateData.is_sms = is_sms;
+  if (is_whatsapp !== undefined) updateData.is_whatsapp = is_whatsapp;
+  const { data, error } = await supabase
+    .from("Customers")
+    .update(updateData)
+    .eq("id", customer_id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
 // --- Get customer by MobileNumber ---
-export async function getCustomerByMobile(mobile_number: number) {
+export async function getCustomerByMobile(mobile_number: string) {
   const { data, error } = await supabase
     .from("Customers")
     .select("id, name, email, mobile_number,status")
@@ -52,7 +67,7 @@ export async function getCustomerByMobile(mobile_number: number) {
 export async function getAllCustomers() {
   const { data, error } = await supabase
     .from("Customers")
-    .select("id, name, email, mobile_number, status, created_at")
+    .select("id, name, email, mobile_number, status,is_sms,is_whatsapp, created_at")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);

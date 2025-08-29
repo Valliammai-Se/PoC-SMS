@@ -1,5 +1,5 @@
 import twilio from "twilio";
-import { getAllCustomers, getCustomerById, getCustomerByMobile, statuses, updateCustomerStatus } from "./db";
+import { getAllCustomers, getCustomerById, getCustomerByMobile, statuses, updateCustomerNotification, updateCustomerStatus } from "./db";
 import express from "express";
 import MessagingResponse from "twilio/lib/twiml/MessagingResponse";
 import config from "./config";
@@ -52,18 +52,31 @@ export async function sendSMS(customerId: number, questionNumber?: number, msg?:
   const customer = await getCustomerById(customerId);
   const question = questionNumber === 1 ? firstQuestion : questionNumber === 2 ? secondQuestion : questionNumber === 3 ? thirdQuestion : firstQuestion;
   const message = msg ? msg : `Hello ${customer.name}, ${question}`;
-  const sms = await twilioClient.messages.create({
+  let sms, whatsapp;
+  if(customer.is_sms)
+  {
+    sms = await twilioClient.messages.create({
     body: message,
     from: config.TWILIO_PHONE_NUMBER,
     to: customer.mobile_number,
   });
+  }
+  if(customer.is_whatsapp)
+  {
+     whatsapp = await twilioClient.messages.create({
+    body: message,
+    from: config.TWILIO_WHATSAPP_NUMBER,
+    to: `whatsapp:${customer.mobile_number}`,
+  });
+  }
+  
 
   // const history = await saveHistory(
   //   customer.id,
   //   message,
   // );
 
-  return { customer, sms };
+  return { customer, sms, whatsapp  };
 }
 
 export async function listMessages(customerId: number) {
@@ -120,6 +133,16 @@ app.get("/statuses", async (req, res) => {
     res.status(500).send({'Error while sending message':error?.message});
   }
 });
+app.put("/notification", async (req, res) => {
+  try {
+     const {id: customerId, is_sms, is_whatsapp} = req.body;
+    await updateCustomerNotification(customerId, is_sms, is_whatsapp);
+     res.status(200).send({status:'Successfully Updated Status'})
+  } catch (error: any) {
+    res.status(500).send({'Error while sending message':error?.message});
+  }
+});
+
 app.put("/statuses", async (req, res) => {
   try {
      const {id: customerId, status: statusId} = req.body;
@@ -130,17 +153,15 @@ app.put("/statuses", async (req, res) => {
     res.status(500).send({'Error while sending message':error?.message});
   }
 });
-
-app.post("/sms", async (req, res) => {
-  const { From, To, Body } = req.body;
-  console.log(`Incoming SMS from ${From}: ${Body}`);
-  try {
+const replyMessageFunc = async(From : string, Body: string, msgs: any[]) => {
+  try{
     let replyMessage = '' ;
    
     const defaultMessage = "Sorry, I didn't understand that. Please reply with the correct option.";
      if(!(Number(Body.trim())))
         replyMessage = defaultMessage;
-     const msgs = await twilioClient.messages.list({ limit :20 });
+    
+    console.log(msgs);
     const firstOutbound = msgs.find(m => m.direction !== "inbound");
      const secondOutbound = msgs.find(m => {  return m.direction !== "inbound" && m !== firstOutbound;
      });
@@ -188,11 +209,33 @@ app.post("/sms", async (req, res) => {
       else
         replyMessage = DeliveredQuestions[index + parseInt(Body) + (numbersQues ? numbersQues.length : 1) -1]; 
     }
+    return replyMessage;
+  }catch(err){
+    console.error(" Reply Message handling failed:", err);
+    return "Sorry, I didn't understand that. Please reply with the correct option.";
+  }
+}
+app.post("/sms", async (req, res) => {
+  const { From, To, Body } = req.body;
+  console.log(`Incoming SMS from ${From}: ${Body}`);
+  try {
+    const [sent, received] = await Promise.all([
+        twilioClient.messages.list({ to: From, limit: 10 }),
+        twilioClient.messages.list({ from: From, limit: 10 }),
+      ]);
+
+    const msgs = [...sent, ...received].sort(
+      (a, b) => new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime()
+    );
+
+    const replyMessage = await replyMessageFunc(From, Body, msgs);
+    
+   
     await twilioClient.messages.create({
       body: replyMessage,
       from: To, 
       to: From, 
-    });
+    }) 
 
     res.send("<Response></Response>");
   } catch (err) {
