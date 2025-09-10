@@ -50,6 +50,8 @@ const secondQuestion = "Your delivery is scheduled for today and will be deliver
 const thirdQuestion = "Your product has been delivered. Reply 1 to CONFIRM and 2 to REPORT ISSUE";
 export async function sendSMS(customerId: number, questionNumber?: number, msg?: string) {
   const customer = await getCustomerById(customerId);
+  if(questionNumber == 0)
+      return
   const question = questionNumber === 1 ? firstQuestion : questionNumber === 2 ? secondQuestion : questionNumber === 3 ? thirdQuestion : firstQuestion;
   const message = msg ? msg : `Hello ${customer.name}, ${question}`;
   let sms, whatsapp;
@@ -172,7 +174,6 @@ const replyMessageFunc = async(From : string, Body: string, msgs: any[]) => {
      if(!(Number(Body.trim())))
         replyMessage = defaultMessage;
     
-    console.log(msgs);
     const firstOutbound = msgs.find(m => m.direction !== "inbound");
      const secondOutbound = msgs.find(m => {  return m.direction !== "inbound" && m !== firstOutbound;
      });
@@ -236,7 +237,7 @@ app.post("/sms", async (req, res) => {
       ]);
 
     const msgs = [...sent, ...received].sort(
-      (a, b) => new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime()
+      (a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
     );
 
     const replyMessage = await replyMessageFunc(From, Body, msgs);
